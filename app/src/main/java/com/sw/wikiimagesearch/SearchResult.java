@@ -5,15 +5,15 @@ import java.util.Comparator;
 /**
  * Created by Swapnil on 5/31/16.
  */
-public class SearchResult implements Comparator<SearchResult> {
+public class SearchResult implements Comparable<SearchResult> {
     private final int sIndex;
     private final String sTitle;
-    private final String sThumbnailURL;
+    private final String sThumbnailSource;
 
-    public SearchResult(int index, String title, String thumbnailURL) {
+    public SearchResult(int index, String title, String thumbnailSource) {
         this.sIndex = index;
         this.sTitle = title;
-        this.sThumbnailURL = thumbnailURL;
+        this.sThumbnailSource = thumbnailSource;
     }
 
     public int getIndex() {
@@ -24,17 +24,17 @@ public class SearchResult implements Comparator<SearchResult> {
         return sTitle;
     }
 
-    public String getThumbnailURL() {
-        return sThumbnailURL;
+    public String getThumbnailSource() {
+        return sThumbnailSource;
     }
 
     @Override
-    public int compare(SearchResult lhs, SearchResult rhs) {
-        return lhs.getIndex() <= rhs.getIndex() ? 1 : -1;
+    public int compareTo(SearchResult another) {
+        return getIndex() >= another.getIndex() ? 1 : -1;
     }
 
     @Override
     public String toString() {
-        return getIndex() + ", " + getTitle() + ", " + (getThumbnailURL() != null ? getThumbnailURL() : "");
+        return getIndex() + ", " + getTitle() + ", " + (getThumbnailSource() != null ? getThumbnailSource() : "");
     }
 }

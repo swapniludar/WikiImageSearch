@@ -4,6 +4,8 @@ import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -17,6 +19,7 @@ import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
+import com.android.volley.toolbox.ImageLoader;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
 
@@ -25,10 +28,9 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
-// http://www.androidhive.info/2016/01/android-working-with-recycler-view/
-//
 public class MainActivity extends AppCompatActivity {
 
     private static final String LOG_TAG = MainActivity.class.getSimpleName();
@@ -40,7 +42,13 @@ public class MainActivity extends AppCompatActivity {
     private EditText sSearchTextField;
     private TextWatcher sSearchFieldWatcher;
     private RequestQueue sRequestQueue;
+    private ImageLoader sImageLoader;
 
+    private RecyclerView sRecyclerView;
+    private RecyclerView.Adapter sAdapter;
+    private RecyclerView.LayoutManager sLayoutManager;
+
+    private List<SearchResult> sSearchResults = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -63,6 +71,16 @@ public class MainActivity extends AppCompatActivity {
         sSearchTextField.addTextChangedListener(sSearchFieldWatcher);
 
         sRequestQueue = Volley.newRequestQueue(this);
+        sImageLoader = new ImageLoader(sRequestQueue, new LruBitmapCache(this));
+
+        sRecyclerView = (RecyclerView) findViewById(R.id.images_list_view);
+
+        sLayoutManager = new LinearLayoutManager(this);
+        sRecyclerView.setLayoutManager(sLayoutManager);
+
+        sAdapter = new SearchedImagesAdapter(sSearchResults, sImageLoader);
+        sRecyclerView.setAdapter(sAdapter);
+
     }
 
     @Override
@@ -126,6 +144,8 @@ public class MainActivity extends AppCompatActivity {
         if(sRequestQueue != null) {
             sRequestQueue.cancelAll(REQ_TAG);
         }
+        sSearchResults.clear();
+        sAdapter.notifyDataSetChanged();
         Log.d(LOG_TAG, "cancelCurrentRequests: Cancelled current requests");
     }
 
@@ -141,18 +161,8 @@ public class MainActivity extends AppCompatActivity {
                         Log.d(LOG_TAG, "initNewRequests->onResponse: " + response.toString());
 
                         try {
-                            JSONArray pages = response.getJSONArray("pages");
-                            List<SearchResult> searchResults = new ArrayList<>();
-                            for (int i = 0; i < pages.length(); i++) {
-                                JSONObject page = pages.getJSONObject(i);
-                                int index = page.getInt("index");
-                                String title = page.getString("title");
-                                JSONObject thumbnail = page.getJSONObject("thumbnail");
-                                String thumbnailURL = (thumbnail != null) ? thumbnail.getString("source") : null;
-                                SearchResult searchResult = new SearchResult(index, title, thumbnailURL);
-                                Log.d(LOG_TAG, "initNewRequests->onResponse: Search result " + searchResult.toString());
-                                searchResults.add(searchResult);
-                            }
+                            parseResponse(response);
+                            sAdapter.notifyDataSetChanged();
                         } catch (JSONException e) {
                             Log.d(LOG_TAG, "initNewRequests->onResponse: Failed to parse JSON reply");
                         }
@@ -161,11 +171,36 @@ public class MainActivity extends AppCompatActivity {
 
                     @Override
                     public void onErrorResponse(VolleyError error) {
-                        Log.d(LOG_TAG, "initNewRequests:onErrorResponse: " + error.toString());
+                        Log.d(LOG_TAG, "initNewRequests->onErrorResponse: " + error.toString());
                     }
                 });
         req.setTag(REQ_TAG);
         sRequestQueue.add(req);
+    }
+
+    private void parseResponse(JSONObject response) throws JSONException {
+        if (response.has("query")
+                && response.getJSONObject("query").has("pages")) {
+            JSONObject pages = response.getJSONObject("query").getJSONObject(
+                    "pages");
+            JSONArray pageNames = pages.names();
+
+            JSONObject searchItem = null;
+            int index;
+            String title = null;
+            String thumbnailSource = null;
+
+            for (int i = 0; i < pageNames.length(); i++) {
+                searchItem = pages.getJSONObject(pageNames.getString(i));
+                index = searchItem.getInt("index");
+                title = searchItem.getString("title");
+                thumbnailSource = searchItem.has("thumbnail") ? searchItem.getJSONObject("thumbnail")
+                        .getString("source") : null;
+                sSearchResults.add(new SearchResult(index, title, thumbnailSource));
+            }
+            Collections.sort(sSearchResults);
+            Log.d(LOG_TAG, "parseResponse: " + sSearchResults.toString());
+        }
     }
 
     private void loadImages() {
@@ -176,10 +211,6 @@ public class MainActivity extends AppCompatActivity {
     protected void onStop() {
         super.onStop();
         cancelCurrentRequests();
-
-        sRequestQueue = null;
-        sSearchFieldWatcher = null;
-        sSearchTextField = null;
     }
 
     @Override
@@ -187,5 +218,9 @@ public class MainActivity extends AppCompatActivity {
         super.onDestroy();
         // Remove text change listener from search field
         sSearchTextField.removeTextChangedListener(sSearchFieldWatcher);
+
+        sRequestQueue = null;
+        sSearchFieldWatcher = null;
+        sSearchTextField = null;
     }
 }
