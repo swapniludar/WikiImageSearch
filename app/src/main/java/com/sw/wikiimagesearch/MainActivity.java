@@ -74,7 +74,7 @@ public class MainActivity extends AppCompatActivity {
         super.onResume();
         // Check on resume if search term is present
         String searchTerm = sSearchTextField.getText().toString();
-        if (searchTerm != null || searchTerm.trim().length() != 0) {
+        if (searchTerm.trim().length() != 0) {
             initNewRequests(searchTerm);
         }
     }
