@@ -29,7 +29,8 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * Created by swapnil on 5/30/16.
+ * Main activity class.
+ * @author Swapnil Udar
  */
 public class MainActivity extends AppCompatActivity {
     private static final String LOG_TAG = MainActivity.class.getSimpleName();
@@ -40,11 +41,8 @@ public class MainActivity extends AppCompatActivity {
     private EditText sSearchTextField;
     private TextWatcher sSearchFieldWatcher;
     private RequestQueue sRequestQueue;
-    private ImageLoader sImageLoader;
 
-    private RecyclerView sRecyclerView;
     private RecyclerView.Adapter sAdapter;
-    private RecyclerView.LayoutManager sLayoutManager;
 
     private List<SearchResult> sSearchResults = new ArrayList<>();
 
@@ -60,15 +58,14 @@ public class MainActivity extends AppCompatActivity {
         sSearchTextField.addTextChangedListener(sSearchFieldWatcher);
 
         sRequestQueue = Volley.newRequestQueue(this);
-        sImageLoader = new ImageLoader(sRequestQueue, new LruBitmapCache(this));
 
-        sRecyclerView = (RecyclerView) findViewById(R.id.images_list_view);
+        RecyclerView.LayoutManager layoutManager = new LinearLayoutManager(this);
+        ImageLoader imageLoader = new ImageLoader(sRequestQueue, new LruBitmapCache(this));
+        sAdapter = new SearchedImagesAdapter(sSearchResults, imageLoader);
 
-        sLayoutManager = new LinearLayoutManager(this);
-        sRecyclerView.setLayoutManager(sLayoutManager);
-
-        sAdapter = new SearchedImagesAdapter(sSearchResults, sImageLoader);
-        sRecyclerView.setAdapter(sAdapter);
+        RecyclerView recyclerView = (RecyclerView) findViewById(R.id.images_list_view);
+        recyclerView.setAdapter(sAdapter);
+        recyclerView.setLayoutManager(layoutManager);
     }
 
     @Override
@@ -92,7 +89,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void initNewRequests(CharSequence searchQuery) {
-        String url = null;
+        String url;
         try {
             url = URL + URLEncoder.encode(searchQuery.toString(), "UTF-8");
         } catch (UnsupportedEncodingException uee) {
@@ -133,18 +130,18 @@ public class MainActivity extends AppCompatActivity {
                     "pages");
             JSONArray pageNames = pages.names();
 
-            JSONObject searchItem = null;
+            JSONObject searchItem;
             int index;
-            String title = null;
-            String thumbnailSource = null;
+            String title;
+            String imageSource;
 
             for (int i = 0; i < pageNames.length(); i++) {
                 searchItem = pages.getJSONObject(pageNames.getString(i));
                 index = searchItem.getInt("index");
                 title = searchItem.getString("title");
-                thumbnailSource = searchItem.has("thumbnail") ? searchItem.getJSONObject("thumbnail")
+                imageSource = searchItem.has("thumbnail") ? searchItem.getJSONObject("thumbnail")
                         .getString("source") : null;
-                sSearchResults.add(new SearchResult(index, title, thumbnailSource));
+                sSearchResults.add(new SearchResult(index, title, imageSource));
             }
             Collections.sort(sSearchResults);
             Log.d(LOG_TAG, "parseResponse: " + sSearchResults.toString());
@@ -188,7 +185,6 @@ public class MainActivity extends AppCompatActivity {
             Log.d(LOG_TAG, "onTextChanged: " + s);
             cancelCurrentRequests();
             initNewRequests(s);
-
         }
 
         @Override

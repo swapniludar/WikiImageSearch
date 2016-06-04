@@ -1,7 +1,10 @@
 package com.sw.wikiimagesearch;
 
+import android.support.annotation.NonNull;
+
 /**
- * Created by Swapnil on 5/31/16.
+ * Search result POJO
+ * @author Swapnil Udar
  */
 public class SearchResult implements Comparable<SearchResult> {
     private final int sIndex;
@@ -27,7 +30,7 @@ public class SearchResult implements Comparable<SearchResult> {
     }
 
     @Override
-    public int compareTo(SearchResult another) {
+    public int compareTo(@NonNull  SearchResult another) {
         return getIndex() >= another.getIndex() ? 1 : -1;
     }
 

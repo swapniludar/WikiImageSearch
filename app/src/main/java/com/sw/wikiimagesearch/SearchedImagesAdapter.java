@@ -13,7 +13,8 @@ import java.net.URLEncoder;
 import java.util.List;
 
 /**
- * Created by swapnil on 5/31/16.
+ * Adapter for recycler view
+ * @author Swapnil Udar
  */
 public class SearchedImagesAdapter extends RecyclerView.Adapter<SearchedImagesAdapter.SearchedImageHolder> {
 
