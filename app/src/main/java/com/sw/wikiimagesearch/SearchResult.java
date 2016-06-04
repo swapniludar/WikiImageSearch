@@ -1,19 +1,17 @@
 package com.sw.wikiimagesearch;
 
-import java.util.Comparator;
-
 /**
  * Created by Swapnil on 5/31/16.
  */
 public class SearchResult implements Comparable<SearchResult> {
     private final int sIndex;
     private final String sTitle;
-    private final String sThumbnailSource;
+    private final String sImageSource;
 
-    public SearchResult(int index, String title, String thumbnailSource) {
+    public SearchResult(int index, String title, String imageSource) {
         this.sIndex = index;
         this.sTitle = title;
-        this.sThumbnailSource = thumbnailSource;
+        this.sImageSource = imageSource;
     }
 
     public int getIndex() {
@@ -24,8 +22,8 @@ public class SearchResult implements Comparable<SearchResult> {
         return sTitle;
     }
 
-    public String getThumbnailSource() {
-        return sThumbnailSource;
+    public String getImageSource() {
+        return sImageSource;
     }
 
     @Override
@@ -35,6 +33,6 @@ public class SearchResult implements Comparable<SearchResult> {
 
     @Override
     public String toString() {
-        return getIndex() + ", " + getTitle() + ", " + (getThumbnailSource() != null ? getThumbnailSource() : "");
+        return getIndex() + ", " + getTitle() + ", " + (getImageSource() != null ? getImageSource() : "");
     }
 }
