@@ -38,16 +38,23 @@ public class SearchedImagesAdapter extends RecyclerView.Adapter<SearchedImagesAd
     @Override
     public void onBindViewHolder(SearchedImageHolder holder, int position) {
         SearchResult searchResult = (sSearchResults.get(position));
+        // when image source url is included in the result
         if (searchResult.getImageSource() != null) {
             holder.sSearchedImageView.setImageUrl(searchResult.getImageSource(), sImageLoader);
         } else {
+            // load dummy image
             try {
-                holder.sSearchedImageView.setImageUrl(DEFAULT_IMAGE + "&txt=" + URLEncoder.encode(searchResult.getTitle(), "UTF-8"), sImageLoader);
+                holder.sSearchedImageView.setImageUrl(
+                        appendImageTextParam(DEFAULT_IMAGE, searchResult.getTitle()), sImageLoader);
             } catch (UnsupportedEncodingException uee) {
                 // Load image without text
                 holder.sSearchedImageView.setImageUrl(DEFAULT_IMAGE, sImageLoader);
             }
         }
+    }
+
+    private String appendImageTextParam(String url, String title) throws UnsupportedEncodingException {
+        return url + "&txt=" + URLEncoder.encode(title, "UTF-8");
     }
 
     @Override

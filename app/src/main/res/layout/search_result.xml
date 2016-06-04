@@ -8,12 +8,13 @@
         android:id="@+id/searched_image"
         android:layout_width="200px"
         android:layout_height="200px"
+        android:background="@drawable/border"
         android:gravity="left"
-        android:paddingLeft="2dp"
-        android:paddingTop="2dp"
         android:paddingBottom="2dp"
+        android:paddingLeft="2dp"
         android:paddingRight="2dp"
-        android:background="@drawable/border"/>
+        android:paddingTop="2dp" />
+
 
 
 </LinearLayout>

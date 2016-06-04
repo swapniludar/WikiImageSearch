@@ -30,10 +30,8 @@ import java.util.List;
 
 
 public class MainActivity extends AppCompatActivity {
-
     private static final String LOG_TAG = MainActivity.class.getSimpleName();
 
-    // TODO: Move it to external property
     private static final String URL = "https://en.wikipedia.org/w/api.php?action=query&prop=pageimages&format=json&piprop=thumbnail&pithumbsize=200&pilimit=50&generator=prefixsearch&gpssearch=";
     private static final String REQ_TAG = "WikiImageSearch";
 
@@ -78,35 +76,6 @@ public class MainActivity extends AppCompatActivity {
         String searchTerm = sSearchTextField.getText().toString();
         if (searchTerm != null || searchTerm.trim().length() != 0) {
             initNewRequests(searchTerm);
-        }
-    }
-
-    private class SearchFieldWatcher implements TextWatcher {
-
-        private CharSequence sPrevSearchTerm = null;
-
-        @Override
-        public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-            // Implementation not required
-        }
-
-        @Override
-        public void onTextChanged(CharSequence s, int start, int before, int count) {
-            // Check if search term is same as the previous one
-            if (sPrevSearchTerm != null && sPrevSearchTerm.equals(s)) {
-                return;
-            }
-            sPrevSearchTerm = s;
-
-            Log.d(LOG_TAG, "onTextChanged: " + s);
-            cancelCurrentRequests();
-            initNewRequests(s);
-
-        }
-
-        @Override
-        public void afterTextChanged(Editable s) {
-            // Implementation not required
         }
     }
 
@@ -195,5 +164,34 @@ public class MainActivity extends AppCompatActivity {
         sRequestQueue = null;
         sSearchFieldWatcher = null;
         sSearchTextField = null;
+    }
+
+    private class SearchFieldWatcher implements TextWatcher {
+
+        private CharSequence sPrevSearchTerm = null;
+
+        @Override
+        public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+            // Implementation not required
+        }
+
+        @Override
+        public void onTextChanged(CharSequence s, int start, int before, int count) {
+            // Check if search term is same as the previous one
+            if (sPrevSearchTerm != null && sPrevSearchTerm.equals(s)) {
+                return;
+            }
+            sPrevSearchTerm = s;
+
+            Log.d(LOG_TAG, "onTextChanged: " + s);
+            cancelCurrentRequests();
+            initNewRequests(s);
+
+        }
+
+        @Override
+        public void afterTextChanged(Editable s) {
+            // Implementation not required
+        }
     }
 }
