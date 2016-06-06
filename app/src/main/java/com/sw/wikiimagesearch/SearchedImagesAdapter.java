@@ -1,6 +1,7 @@
 package com.sw.wikiimagesearch;
 
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -14,19 +15,26 @@ import java.util.List;
 
 /**
  * Adapter for recycler view
+ *
  * @author Swapnil Udar
  */
 public class SearchedImagesAdapter extends RecyclerView.Adapter<SearchedImagesAdapter.SearchedImageHolder> {
+    private static final String LOG_TAG = SearchedImagesAdapter.class.getSimpleName();
 
-    private static final String DEFAULT_IMAGE = "https://placeholdit.imgix.net/~text?txtsize=19&w=200&h=200";
+    private static final String DEFAULT_IMAGE = "https://placeholdit.imgix.net/~text?txtsize=%d&w=%d&h=%d";
+
 
     private final List<SearchResult> sSearchResults;
     private final ImageLoader sImageLoader;
+    private final int sImageSize;
+    private final String sModifiedDefImageURL;
 
-    public SearchedImagesAdapter(List<SearchResult> searchResults, ImageLoader imageLoader) {
+    public SearchedImagesAdapter(List<SearchResult> searchResults, ImageLoader imageLoader, int imageSize) {
         super();
         this.sSearchResults = searchResults;
         this.sImageLoader = imageLoader;
+        this.sImageSize = imageSize;
+        this.sModifiedDefImageURL = updateDefImageParams();
     }
 
     @Override
@@ -46,16 +54,28 @@ public class SearchedImagesAdapter extends RecyclerView.Adapter<SearchedImagesAd
             // load dummy image
             try {
                 holder.sSearchedImageView.setImageUrl(
-                        appendImageTextParam(DEFAULT_IMAGE, searchResult.getTitle()), sImageLoader);
+                        updateImageText(searchResult.getTitle()), sImageLoader);
             } catch (UnsupportedEncodingException uee) {
                 // Load image without text
-                holder.sSearchedImageView.setImageUrl(DEFAULT_IMAGE, sImageLoader);
+                holder.sSearchedImageView.setImageUrl(sModifiedDefImageURL, sImageLoader);
             }
         }
+        // update image view width and height
+        ViewGroup.LayoutParams layoutParams = holder.sSearchedImageView.getLayoutParams();
+        layoutParams.width = layoutParams.height = sImageSize;
+        holder.sSearchedImageView.setLayoutParams(layoutParams);
     }
 
-    private String appendImageTextParam(String url, String title) throws UnsupportedEncodingException {
-        return url + "&txt=" + URLEncoder.encode(title, "UTF-8");
+    // Set font size over image
+    private String updateDefImageParams() {
+        int textSize = sImageSize / 10;
+        return String.format(DEFAULT_IMAGE, textSize, sImageSize, sImageSize);
+    }
+
+    private String updateImageText(String title) throws UnsupportedEncodingException {
+        String url = sModifiedDefImageURL + "&txt=" + URLEncoder.encode(title, "UTF-8");
+        Log.d(LOG_TAG, "Default image URL: " + url);
+        return url;
     }
 
     @Override
@@ -64,9 +84,7 @@ public class SearchedImagesAdapter extends RecyclerView.Adapter<SearchedImagesAd
     }
 
     public static class SearchedImageHolder extends RecyclerView.ViewHolder {
-
         private NetworkImageView sSearchedImageView;
-
 
         public SearchedImageHolder(View view) {
             super(view);

@@ -1,5 +1,8 @@
 package com.sw.wikiimagesearch;
 
+import android.graphics.Point;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
@@ -8,7 +11,9 @@ import android.support.v7.widget.Toolbar;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
+import android.view.Display;
 import android.widget.EditText;
+import android.widget.TextView;
 
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
@@ -30,21 +35,29 @@ import java.util.List;
 
 /**
  * Main activity class.
+ *
  * @author Swapnil Udar
  */
 public class MainActivity extends AppCompatActivity {
     private static final String LOG_TAG = MainActivity.class.getSimpleName();
 
-    private static final String URL = "https://en.wikipedia.org/w/api.php?action=query&prop=pageimages&format=json&piprop=thumbnail&pithumbsize=200&pilimit=50&generator=prefixsearch&gpssearch=";
+    private static final String URL = "https://en.wikipedia.org/w/api.php?action=query&prop=pageimages&format=json&piprop=thumbnail&pithumbsize=%s&pilimit=50&generator=prefixsearch&gpssearch=";
     private static final String REQ_TAG = "WikiImageSearch";
+    private static final double IMAGE_RATIO = 0.5;
 
     private EditText sSearchTextField;
+    private TextView sErrorText;
     private TextWatcher sSearchFieldWatcher;
+
     private RequestQueue sRequestQueue;
 
     private RecyclerView.Adapter sAdapter;
 
     private List<SearchResult> sSearchResults = new ArrayList<>();
+
+    private int sImageSize;
+
+    private String sURL;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -61,20 +74,60 @@ public class MainActivity extends AppCompatActivity {
 
         RecyclerView.LayoutManager layoutManager = new LinearLayoutManager(this);
         ImageLoader imageLoader = new ImageLoader(sRequestQueue, new LruBitmapCache(this));
-        sAdapter = new SearchedImagesAdapter(sSearchResults, imageLoader);
+        sImageSize = calcImageSize();
+        sAdapter = new SearchedImagesAdapter(sSearchResults, imageLoader, sImageSize);
 
         RecyclerView recyclerView = (RecyclerView) findViewById(R.id.images_list_view);
         recyclerView.setAdapter(sAdapter);
         recyclerView.setLayoutManager(layoutManager);
+
+        sURL = updateImageSize();
+
+        sErrorText = (TextView) findViewById(R.id.error_text);
+    }
+
+    /**
+     * Image size is calculated based on the screen width
+     */
+    private int calcImageSize() {
+        Display display = getWindowManager().getDefaultDisplay();
+        Point size = new Point();
+        display.getSize(size);
+        int width = size.x;
+        int imageSize = (int) Math.ceil(width * IMAGE_RATIO);
+        // Round image size in units of 50
+        imageSize = imageSize - (imageSize % 50);
+        Log.d(LOG_TAG, "Image size (in pixels): " + imageSize);
+        return imageSize;
+    }
+
+    /**
+     * Update image size in URL
+     *
+     */
+    private String updateImageSize() {
+        String url = String.format(URL, String.valueOf(sImageSize));
+        Log.d(LOG_TAG, "Updated URL: "+url);
+        return url;
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        // Check on resume if search term is present
-        String searchTerm = sSearchTextField.getText().toString();
-        if (searchTerm.trim().length() != 0) {
-            initNewRequests(searchTerm);
+        // check if network connectivity is available
+        ConnectivityManager connectivityManager
+                = (ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
+        NetworkInfo networkInfo = connectivityManager.getActiveNetworkInfo();
+        // when not connected
+        if(networkInfo == null || !networkInfo.isAvailable() || !networkInfo.isConnected()) {
+            sErrorText.setText(getString(R.string.network_error));
+        } else {
+            sErrorText.setText("");
+            // Check on resume if search term is present
+            String searchTerm = sSearchTextField.getText().toString();
+            if (searchTerm.trim().length() != 0) {
+                initNewRequests(searchTerm);
+            }
         }
     }
 
@@ -91,7 +144,7 @@ public class MainActivity extends AppCompatActivity {
     private void initNewRequests(CharSequence searchQuery) {
         String url;
         try {
-            url = URL + URLEncoder.encode(searchQuery.toString(), "UTF-8");
+            url = sURL + URLEncoder.encode(searchQuery.toString(), "UTF-8");
         } catch (UnsupportedEncodingException uee) {
             Log.d(LOG_TAG, "initNewRequests: " + uee.getLocalizedMessage());
             return;
